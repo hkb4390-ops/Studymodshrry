@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Update Admin Panel</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-dark: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Live Status Card */
+        .live-status {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--success);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .status-val { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+        .status-desc { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+        /* Form Controls */
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .form-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        textarea.form-control { resize: vertical; min-height: 80px; }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
+        .btn-outline:hover { background: rgba(255, 255, 255, 0.1); }
+        
+        /* Table Styles */
+        .table-responsive { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th {
+            padding: 14px 16px;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--glass-border);
+            font-weight: 600;
+        }
+        td {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .tr-live {
+            background: rgba(16, 185, 129, 0.05);
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-live { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .badge-history { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.3); }
+
+        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        
+        .version-tag {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-content {
+            width: 100%; max-width: 450px;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+
+        /* Toast */
+        #toast {
+            position: fixed; bottom: 24px; right: 24px;
+            background: var(--success); color: white;
+            padding: 12px 24px; border-radius: 12px;
+            font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.3s; z-index: 2000;
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>studymods.hrry Admin</h1>
+        </div>
+
+        <!-- Left Column -->
+        <div class="left-col">
+            <!-- Current Live Status -->
+            <div class="glass-panel live-status" style="margin-bottom: 24px;">
+                <div class="live-indicator"><div class="pulse-dot"></div> CURRENT LIVE VERSION</div>
+                <div class="status-val" id="live-version-display">v--</div>
+                <div class="status-desc" id="live-message-display" style="margin-bottom: 12px;">Loading...</div>
+                <div style="word-break: break-all; font-size: 12px; color: var(--primary);" id="live-link-display"></div>
+            </div>
+
+            <!-- Rollout New Update -->
+            <div class="glass-panel">
+                <h2 style="margin-bottom: 20px; font-size: 18px;">Rollout New Update</h2>
+                <form id="rollout-form">
+                    <div class="form-group">
+                        <label>Version Number</label>
+                        <input type="text" id="new-version" class="form-control" placeholder="e.g. 2.0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Important Message</label>
+                        <textarea id="new-message" class="form-control" placeholder="What's new in this update?" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Download Link (.apk)</label>
+                        <input type="url" id="new-link" class="form-control" placeholder="https://..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+                        Publish & Make Live
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column (History Table) -->
+        <div class="glass-panel" style="overflow: hidden; display: flex; flex-direction: column;">
+            <h2 style="margin-bottom: 10px; font-size: 18px;">Update History</h2>
+            <div class="table-responsive" style="flex: 1;">
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Status</th>
+                            <th>Message</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body">
+                        <tr><td colspan="4" style="text-align: center;">Loading history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="glass-panel modal-content">
+            <h2 style="margin-bottom: 20px; font-size: 18px;">Edit Version Info</h2>
+            <input type="hidden" id="edit-id">
+            <input type="hidden" id="edit-version-num">
+            <div class="form-group">
+                <label>Important Message</label>
+                <textarea id="edit-message" class="form-control" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Download Link</label>
+                <input type="url" id="edit-link" class="form-control" required>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+                <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast">Action successful!</div>
+
+    <!-- Firebase SDK Modular -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // ==========================================
+        // 🔴 YAHAN APNA FIREBASE CONFIG DAALEIN 🔴
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "https://ewhe-1827a-default-rtdb.firebaseio.com/",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Global State Variables
+        let historyData = [];
+        let currentLiveId = null;
+
+        // UI Elements
+        const liveVersionDisplay = document.getElementById('live-version-display');
+        const liveMessageDisplay = document.getElementById('live-message-display');
+        const liveLinkDisplay = document.getElementById('live-link-display');
+        const historyBody = document.getElementById('history-body');
+        const newVersionInput = document.getElementById('new-version');
+
+        // Notification Function
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Helper: Compare version string (1.0 vs 1.1 vs 2.0.1)
+        function compareVersions(v1, v2) {
+            const p1 = v1.split('.').map(Number);
+            const p2 = v2.split('.').map(Number);
+            for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+                let n1 = p1[i] || 0; let n2 = p2[i] || 0;
+                if (n1 > n2) return 1;
+                if (n2 > n1) return -1;
+            }
+            return 0;
+        }
+
+        // Listen for Live Version
+        onValue(ref(db, 'appUpdate/live'), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                currentLiveId = data.id; // Reference back to history ID
+                liveVersionDisplay.textContent = `v${data.version}`;
+                liveMessageDisplay.textContent = data.importantMessage;
+                liveLinkDisplay.textContent = data.downloadLink;
+            } else {
+                currentLiveId = null;
+                liveVersionDisplay.textContent = `No Live Update`;
+                liveMessageDisplay.textContent = "App will not show update popup to users.";
+                liveLinkDisplay.textContent = "";
+            }
+            renderTable(); // Re-render table to update badges
+        });
+
+        // Listen for History Versions
+        onValue(ref(db, 'appUpdate/versions'), (snapshot) => {
+            historyData = [];
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                Object.keys(data).forEach(key => {
+                    historyData.push({ id: key, ...data[key] });
+                });
+                // Sort by Version descending
+                historyData.sort((a, b) => compareVersions(b.version, a.version));
+            }
+            
+            // Auto Suggest Next Version for input
+            if (historyData.length > 0 && newVersionInput.value === "") {
+                const highestVer = historyData[0].version;
+                const parts = highestVer.split('.');
+                parts[parts.length - 1] = parseInt(parts[parts.length - 1]) + 1;
+                newVersionInput.value = parts.join('.');
+            } else if (historyData.length === 0) {
+                newVersionInput.value = "1.0";
+            }
+            
+            renderTable();
+        });
+
+        // Render Table
+        function renderTable() {
+            historyBody.innerHTML = '';
+            if (historyData.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No history found</td></tr>`;
+                return;
+            }
+
+            historyData.forEach(item => {
+                const isLive = (item.id === currentLiveId);
+                const tr = document.createElement('tr');
+                if(isLive) tr.classList.add('tr-live');
+
+                tr.innerHTML = `
+                    <td><span class="version-tag">v${item.version}</span></td>
+                    <td>
+                        <span class="badge ${isLive ? 'badge-live' : 'badge-history'}">
+                            ${isLive ? 'ACTIVE LIVE' : 'ARCHIVED'}
+                        </span>
+                    </td>
+                    <td><div style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size:13px;">${item.importantMessage}</div></td>
+                    <td class="action-buttons">
+                        ${!isLive ? `<button class="btn btn-success" style="padding: 6px 12px;" onclick="makeLive('${item.id}')">Make Live</button>` : ''}
+                        <button class="btn btn-outline" style="padding: 6px 12px; background: rgba(255,255,255,0.05);" onclick="openEdit('${item.id}')">Edit</button>
+                        <button class="btn btn-danger" style="padding: 6px 12px;" onclick="deleteVersion('${item.id}')">Delete</button>
+                    </td>
+                `;
+                historyBody.appendChild(tr);
+            });
+        }
+
+        // Form Submit: Rollout new update
+        document.getElementById('rollout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ver = document.getElementById('new-version').value;
+            const msg = document.getElementById('new-message').value;
+            const link = document.getElementById('new-link').value;
+
+            try {
+                // 1. Push to History
+                const newRef = push(ref(db, 'appUpdate/versions'));
+                const newId = newRef.key;
+                const payload = {
+                    version: ver,
+                    importantMessage: msg,
+                    downloadLink: link,
+                    timestamp: Date.now()
+                };
+                await set(newRef, payload);
+
+                // 2. Automatically Make it Live
+                await set(ref(db, 'appUpdate/live'), { id: newId, enabled: true, ...payload });
+
+                // Reset Form
+                document.getElementById('new-message').value = '';
+                document.getElementById('new-link').value = '';
+                document.getElementById('new-version').value = ''; // clears to trigger auto-suggest
+                showToast("Update Rolled Out successfully!");
+            } catch (err) {
+                showToast("Error saving update!", true);
+                console.error(err);
+            }
+        });
+
+        // ACTION: Make Live
+        window.makeLive = async (id) => {
+            const item = historyData.find(x => x.id === id);
+            if (!item) return;
+            try {
+                await set(ref(db, 'appUpdate/live'), {
+                    id: item.id,
+                    version: item.version,
+                    importantMessage: item.importantMessage,
+                    downloadLink: item.downloadLink,
+                    enabled: true
+                });
+                showToast(`v${item.version} is now Live!`);
+            } catch (err) {
+                showToast("Failed to change live version", true);
+            }
+        };
+
+        // ACTION: Delete with Fallback Logic
+        window.deleteVersion = async (id) => {
+            if (!confirm("Are you sure you want to delete this version?")) return;
+            
+            try {
+                // Remove from history
+                await remove(ref(db, `appUpdate/versions/${id}`));
+
+                // FALLBACK LOGIC: If deleted version was currently Live
+                if (id === currentLiveId) {
+                    const remaining = historyData.filter(x => x.id !== id);
+                    if (remaining.length > 0) {
+                        // remaining is already sorted descending, [0] is the highest
+                        const fallbackItem = remaining[0];
+                        await set(ref(db, 'appUpdate/live'), {
+                            id: fallbackItem.id,
+                            version: fallbackItem.version,
+                            importantMessage: fallbackItem.importantMessage,
+                            downloadLink: fallbackItem.downloadLink,
+                            enabled: true
+                        });
+                        showToast("Live version deleted. Automatically fell back to v" + fallbackItem.version);
+                    } else {
+                        // No versions left
+                        await remove(ref(db, 'appUpdate/live'));
+                        showToast("All versions deleted. Live update disabled.");
+                    }
+                } else {
+                    showToast("Version deleted from history.");
+                }
+            } catch (err) {
+                showToast("Failed to delete", true);
+            }
+        };
+
+        // Modal Controls
+        const editModal = document.getElementById('edit-modal');
+        
+        window.openEdit = (id) => {
+            const item = historyData.find(x => x.id === id);
+            if (!item) return;
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('edit-version-num').value = item.version;
+            document.getElementById('edit-message').value = item.importantMessage;
+            document.getElementById('edit-link').value = item.downloadLink;
+            editModal.classList.add('active');
+        };
+
+        window.closeEditModal = () => {
+            editModal.classList.remove('active');
+        };
+
+        window.saveEdit = async () => {
+            const id = document.getElementById('edit-id').value;
+            const version = document.getElementById('edit-version-num').value;
+            const msg = document.getElementById('edit-message').value;
+            const link = document.getElementById('edit-link').value;
+
+            try {
+                const payload = { importantMessage: msg, downloadLink: link };
+                
+                // Update in History
+                await update(ref(db, `appUpdate/versions/${id}`), payload);
+                
+                // If it's the live version, update the live node too
+                if (id === currentLiveId) {
+                    await update(ref(db, 'appUpdate/live'), payload);
+                }
+                
+                closeEditModal();
+                showToast("Changes saved successfully!");
+            } catch (err) {
+                showToast("Error saving changes", true);
+            }
+        };
+
+    </script>
+</body>
+</html>
